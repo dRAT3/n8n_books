@@ -1,0 +1,121 @@
+{
+  "meta": {
+    "instanceId": "6f6660e3fc5cbeeba3990c4845e024b11a987b3bd00f65f824bca81bdf05df3f"
+  },
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "75ec18c1-c5f5-43b6-89a6-512d45502cd5",
+      "name": "When clicking \"Execute Workflow\"",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        240,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "fileSelector": "/extracted.json"
+      },
+      "id": "63ebd5e7-2559-4401-91a0-4fbb712b5ddc",
+      "name": "Read Binary Files",
+      "type": "n8n-nodes-base.readBinaryFiles",
+      "typeVersion": 1,
+      "position": [
+        440,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "options": {
+          "encoding": "utf8",
+          "stripBOM": true,
+          "keepSource": false
+        }
+      },
+      "id": "d595bc15-ebd6-4321-aee0-cfce1f82d1a6",
+      "name": "Convert to/from binary data",
+      "type": "n8n-nodes-base.moveBinaryData",
+      "typeVersion": 1,
+      "position": [
+        640,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "text",
+        "options": {}
+      },
+      "id": "8635a6b5-db38-4cff-a3ac-1cd715175fb6",
+      "name": "Item Lists",
+      "type": "n8n-nodes-base.itemLists",
+      "typeVersion": 3,
+      "position": [
+        860,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "ret = [];\nlet i = 0;\nfor (const item of $input.all()) {\n  // what I need begins at 28 and ends at 71\n  if (i > 27 && i<72) {\n    ret.push(item);\n  } \n  i++;\n}\n\nreturn ret;"
+      },
+      "id": "89d06237-e779-492c-860a-7e7aa39d8523",
+      "name": "extract_chapters_disregard_intro_and_end",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        460
+      ]
+    }
+  ],
+  "connections": {
+    "When clicking \"Execute Workflow\"": {
+      "main": [
+        [
+          {
+            "node": "Read Binary Files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Binary Files": {
+      "main": [
+        [
+          {
+            "node": "Convert to/from binary data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to/from binary data": {
+      "main": [
+        [
+          {
+            "node": "Item Lists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Item Lists": {
+      "main": [
+        [
+          {
+            "node": "extract_chapters_disregard_intro_and_end",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

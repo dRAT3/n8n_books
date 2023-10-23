@@ -1,0 +1,518 @@
+{
+  "meta": {
+    "instanceId": "6f6660e3fc5cbeeba3990c4845e024b11a987b3bd00f65f824bca81bdf05df3f"
+  },
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "73e7e71b-1234-488c-a87e-cf44f46c1177",
+      "name": "When clicking \"Execute Workflow\"",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        300,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "fileSelector": "/apis.pdf"
+      },
+      "id": "8e5b1966-8275-44ef-9065-7c17568ad417",
+      "name": "Read Binary Files",
+      "type": "n8n-nodes-base.readBinaryFiles",
+      "typeVersion": 1,
+      "position": [
+        480,
+        460
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "d78eb7aa-8d74-4c10-ba53-7b49dfbb142a",
+      "name": "Read PDF",
+      "type": "n8n-nodes-base.readPDF",
+      "typeVersion": 1,
+      "position": [
+        660,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "model": "gpt-3.5-turbo-16k",
+        "options": {
+          "temperature": 0
+        }
+      },
+      "id": "43799018-2d97-405b-b027-978428795496",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [
+        2920,
+        660
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "HQghypKbba0y0VB9",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "let outputItems = [];\n\nfor (const item of $input.all()) {\n    let text = item.json.text;\n\n    // Match the pattern 'Chapter {chapter_number} |'\n    const chapterPattern = /Chapter (\\d+)\\:/g;\n    let match;\n    let lastEndIndex = 0;\n    let lastChapterNumber = null;\n\n    while ((match = chapterPattern.exec(text)) !== null) {\n        let chapterNumber = match[1];\n        let startIndex = match.index + match[0].length;\n\n        if (lastEndIndex < match.index) {\n            if (lastChapterNumber !== null) {\n                let chapterContent = text.slice(lastEndIndex, match.index).trim();\n                outputItems.push({ json: { chapter: 'b' + lastChapterNumber, text: chapterContent } });\n            }\n        }\n\n        lastEndIndex = startIndex;\n        lastChapterNumber = chapterNumber;\n    }\n\n    // Handle the content after the last chapter match\n    if (lastChapterNumber !== null) {\n        let chapterContent = text.slice(lastEndIndex).trim();\n        outputItems.push({ json: { chapter: 'b' + lastChapterNumber, text: chapterContent } });\n    }\n}\n\nreturn outputItems;"
+      },
+      "id": "6de0d676-5e44-48aa-b3cf-df409e036ddf",
+      "name": "split_by_chapter",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1060,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "prompt": "=Chapter Title: {{ $json.title }}\nContent to transform: {{ $json.text }}\n\nAbove is a part of a book, you will transform the chapter into a how to article.\n\nDisregard the images and figures as we don't have access to them. NEVER reference a chapter. NEVER write an introduction. Make sure the content is complete.\n\nTarget Audience: people who want to start learning AI.\n\nTitle: {{ $json.response.text }}"
+      },
+      "id": "7656b2b7-8216-450f-926e-9e8d732d09b7",
+      "name": "Basic LLM Chain",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1,
+      "position": [
+        2900,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "c7165226-985e-47b6-8b70-4daf40da8033",
+      "name": "Summarization Chain",
+      "type": "@n8n/n8n-nodes-langchain.chainSummarization",
+      "typeVersion": 1,
+      "position": [
+        1340,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "model": "gpt-3.5-turbo-16k",
+        "options": {}
+      },
+      "id": "7859517b-d43f-4c5e-8816-8e788c191130",
+      "name": "OpenAI Chat Model1",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [
+        1360,
+        620
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "HQghypKbba0y0VB9",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "e1c934c2-f68e-4045-8ecc-2ef0580ad73c",
+      "name": "JSON Input Loader",
+      "type": "@n8n/n8n-nodes-langchain.documentJsonInputLoader",
+      "typeVersion": 1,
+      "position": [
+        1460,
+        620
+      ]
+    },
+    {
+      "parameters": {
+        "chunkSize": 1597
+      },
+      "id": "7f231def-89e4-4083-8ddd-783f9a3560c8",
+      "name": "Token Splitter",
+      "type": "@n8n/n8n-nodes-langchain.textSplitterTokenSplitter",
+      "typeVersion": 1,
+      "position": [
+        1580,
+        760
+      ]
+    },
+    {
+      "parameters": {
+        "content": "You have to edit at least the regex in this code, if it doesn't work use the split by chars node. Or better yet try to find the epub and use our helper script to extract the text to json and use the epub flow.\n\n",
+        "height": 445.3658536585367,
+        "width": 281.03299856527985
+      },
+      "id": "4e479b86-7dbf-4041-b792-279d25993eba",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1000,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "let chapters_itered = [];\nlet merged_title_with_text = [];\n\nfor (const item of $input.all()) {\n  console.log(item);\n  let found = false;\n\n  for (let i = 0; i < chapters_itered.length; i++) {\n    // Check if title already in chapters    \n    if (chapters_itered[i] == item.json.chapter) {      \n      merged_title_with_text[i].text = item.json.text;\n      found = true;\n      break;  // Exit the loop if the chapter is found\n    } \n  }\n\n  if (!found) {\n    merged_title_with_text.push({title: item.json.text, text: item.json.text });\n    chapters_itered.push(item.json.chapter);\n  } \n}\n\nconsole.log(merged_title_with_text);\nreturn merged_title_with_text;"
+      },
+      "id": "6d716148-1bb6-4e62-afe5-83268fc6b684",
+      "name": "merge_title_with_content",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1060,
+        660
+      ]
+    },
+    {
+      "parameters": {
+        "include": "selected",
+        "includeFields": "text",
+        "options": {}
+      },
+      "id": "14f866b8-8fdc-48b6-86e4-044873d4b404",
+      "name": "strip_all_but_text",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.1,
+      "position": [
+        840,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "mergeByPosition",
+        "options": {}
+      },
+      "id": "cced7d20-a41b-4d29-b934-0736606a9300",
+      "name": "Merge",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        2460,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "let all_summaries = [];\n// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nfor (const item of $input.all()) {\n  all_summaries.push(item.json.response.text)\n}\n\n  let final_output = {\n    json: {\n        summaries: all_summaries\n    }\n};\n\nreturn final_output;"
+      },
+      "id": "668e1225-0f51-47b5-846e-c512aee6d95c",
+      "name": "merge_summaries_into_one",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1700,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "model": "gpt-3.5-turbo-16k",
+        "options": {
+          "temperature": 0.2
+        }
+      },
+      "id": "eb64e6ff-ba2c-47af-9bca-c9c46ce66914",
+      "name": "OpenAI Chat Model2",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [
+        1920,
+        660
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "HQghypKbba0y0VB9",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "prompt": "=You are creating the titles of a series of how to guide for a forum catered to entrepreneurs that want to start a business in the AI field. \n\nYou will be given a summarization of all the chapters in the book. Generate one title for each summary. Titles must start with \"How to ...\" unless they are purely informative, then you can create a different forum title.\n\nAll summaries.\n{{ JSON.stringify($json.summaries) }}\n"
+      },
+      "id": "26685441-10e9-44aa-b41f-f4ca80ca986e",
+      "name": "Generate titles",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1,
+      "position": [
+        1900,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "78aa15d7-0c49-4af8-9f04-26f4a6427e6a",
+      "name": "Item List Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserItemList",
+      "typeVersion": 1,
+      "position": [
+        2080,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "content": "Escape curly braces, langchain doesn't like it!",
+        "height": 305.00749625187404
+      },
+      "id": "c522b127-7eba-46d3-acc5-5ea238d5a127",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2620,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Escape curly braces\nfunction replace_braces(text) {\n    return text.replace(/{/g, '{{').replace(/}/g, '}}');\n}\n\n// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nfor (const item of $input.all()) { \n  item.json.text = replace_braces(item.json.text);\n}\n\nreturn $input.all();"
+      },
+      "id": "097fce84-28eb-49de-949d-831b75d03246",
+      "name": "escape_curly_braces",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2660,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "mergeByPosition",
+        "options": {}
+      },
+      "id": "5ca8e064-5642-47db-b741-ea4ca6a0014f",
+      "name": "Merge1",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        3340,
+        380
+      ]
+    }
+  ],
+  "connections": {
+    "When clicking \"Execute Workflow\"": {
+      "main": [
+        [
+          {
+            "node": "Read Binary Files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Binary Files": {
+      "main": [
+        [
+          {
+            "node": "Read PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read PDF": {
+      "main": [
+        [
+          {
+            "node": "strip_all_but_text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "split_by_chapter": {
+      "main": [
+        [
+          {
+            "node": "merge_title_with_content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Summarization Chain": {
+      "main": [
+        [
+          {
+            "node": "merge_summaries_into_one",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Summarization Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JSON Input Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Summarization Chain",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Token Splitter": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "JSON Input Loader",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "merge_title_with_content": {
+      "main": [
+        [
+          {
+            "node": "Summarization Chain",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "strip_all_but_text": {
+      "main": [
+        [
+          {
+            "node": "split_by_chapter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "escape_curly_braces",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "merge_summaries_into_one": {
+      "main": [
+        [
+          {
+            "node": "Generate titles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generate titles",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate titles": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Item List Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Generate titles",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "escape_curly_braces": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
